@@ -13,8 +13,8 @@ setup(
     version=version,
     author="Jose A. Ruiz-Arias",
     author_email="jararias@uma.es",
-    url="",
-    description="",
+    url="https://github.com/jararias/msplines",
+    description="Mean preserving interpolation of time series with splines",
     long_description=read_content("README.md")
     long_description_content_type='text/markdown',
     packages=find_packages(),
