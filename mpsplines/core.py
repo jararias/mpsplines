@@ -497,23 +497,16 @@ class MeanPreservingMonthlyLTAInterpolation(object):
 
         Parameters
         ----------
-        xi : (N,) array_like
-            A 1-D array of datetime_like values.
-        yi : (N,) array_like
-            A 1-D array of real values. Its length must be equal to the
-            length of `x`.
+        yi : (12,) array_like
+            Monthly long-term average (LTA) interpolating values
         min_val : None or real, optional
             Specifies a global minimum value for the interpolated curve. It is
             intended to constraint the interpolated values within physically
             possible limits. For instance, precipitation rates must be always
             positive. Default is None, which, in practice, is like assuming
             min_val = -np.inf.
-        x_edges : None or (N+1,) array_like, optional
-            A 1-D array of datetime_like values with the x-bounds between
-            splines. Its length must be equal to one plus the length of `x`.
-            Default is None meaning that the x_edges are assumed at the center
-            between consecutive `xi` values, and extrapolated at the leftmost
-            and rightmost splines.
+        day_of_month : float or array_like with shape (12,)
+            day of month which the interpolaing values yi refers to
         cubic_window_size : int, optional
             Specifies the number of splines that are relaxed when a violation
             of min_val is found. The violating spline is in the middle of the
@@ -529,14 +522,14 @@ class MeanPreservingMonthlyLTAInterpolation(object):
         >>> from datetime import datetime, timedelta
         >>> import numpy as np
         >>> import pylab as pl
-        >>> from mpsplines import MeanPreservingLTAInterpolation as MPI
+        >>> from mpsplines import MeanPreservingMonthlyLTAInterpolation as MPI
         >>> xi = [datetime(2018, month, 15, 12) for month in range(1, 13)]
         >>> yi = np.array([0.3078, 0.3072, 0.3084, 0.3132, 0.3254, 0.3314,\
                            0.3298, 0.3204, 0.3106, 0.3118, 0.3119, 0.3082])
         >>> # interpolation from samples (averages) into the original grid
-        >>> mpi = MPI(xi, yi)
-        >>> xnew = [datetime(2017, 6, 1, 12) + timedelta(j) \
-                    for j in range(730)]
+        >>> mpi = MPI(yi)
+        >>> xnew = [datetime(2017, 1, 1, 12) + timedelta(j) \
+                    for j in range(365*3)]
         >>> ynew = mpi(xnew)
         >>> l, = pl.plot(xi, yi, 'k.', ms=16)
         >>> l, = pl.plot(xnew, ynew, 'r.', ms=4)
@@ -556,9 +549,11 @@ class MeanPreservingMonthlyLTAInterpolation(object):
             raise AssertionError('day_of_month out of bounds')
 
         days = np.array(
-            ['2020-{m:02d}-{d:02d}' for m, d in zip(range(1, 13), dom)],
+            [f'2020-{m:02d}-{d:02d}' for m, d in zip(range(1, 13), dom)],
             dtype='datetime64[ns]')
+        print(days)
         xi = get_day_of_year(days) / get_number_of_days_in_year(days)
+        print(xi)
 
         if np.any((xi < 0.) | (xi > 1)):
             raise AssertionError('xi out of bounds')
