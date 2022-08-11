@@ -14,7 +14,7 @@ See inline documentation for use explanations.
 
 You can run also:
 
-python -m doctest mpslines.py
+python -m doctest mpsplines.py
 
 for a demo
 
@@ -31,6 +31,9 @@ try:
 except ImportError:
     from scipy import linalg
     USE_SPARSE_MATRICES = False
+
+    
+logger.disable(__name__)
 
 
 def find_minimum(p, dxl, dxu):
