@@ -415,7 +415,7 @@ class MeanPreservingInterpolation(object):
 
             for i in range(1, self.n_samples-1):
                 local_minimum = find_minimum(P[i], Dxl[i], Dxu[i])
-                if local_minimum < self.min_val:
+                if (self.min_val - local_minimum) > 1e-6:
                     logger.warning(
                         f'the spline at position {i} could not be constrained '
                         f'above {self.min_val}. Local minimum={local_minimum}'
