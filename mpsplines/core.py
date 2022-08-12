@@ -554,9 +554,7 @@ class MeanPreservingMonthlyLTAInterpolation(object):
         days = np.array(
             [f'2020-{m:02d}-{d:02d}' for m, d in zip(range(1, 13), dom)],
             dtype='datetime64[ns]')
-        print(days)
         xi = get_day_of_year(days) / get_number_of_days_in_year(days)
-        print(xi)
 
         if np.any((xi < 0.) | (xi > 1)):
             raise AssertionError('xi out of bounds')
