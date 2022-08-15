@@ -1,4 +1,4 @@
-## Mean-preserving interpolation with splines for averaged data series in solar radiation modeling
+### Mean-preserving interpolation with splines for averaged data series in solar radiation modeling
 
 This repository contains the data and code prepared while developing and writing the following research article:
 
@@ -26,4 +26,4 @@ The mean-preserving interpolation code can be more conveniently installed in you
 python3 -m pip install git+https://github.com/jararias/mpsplines.git
 ```
 
-This will give you access to ```mpsplines``` from your Python environment anywhere. See details in [https://githum.com/jararias/mpsplines](https://githum.com/jararias/mpsplines).
+This will give you access to ```mpsplines``` from your Python environment anywhere. See details in [https://github.com/jararias/mpsplines](https://github.com/jararias/mpsplines).
