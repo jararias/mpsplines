@@ -32,7 +32,7 @@ except ImportError:
     from scipy import linalg
     USE_SPARSE_MATRICES = False
 
-    
+
 logger.disable(__name__)
 
 
