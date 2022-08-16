@@ -25,5 +25,5 @@ yi = np.reshape(y, (480, 60)).mean(axis=1)
 
 where ```y``` is the unknown process that we want to reconstruct, but we only know the averages:
 
-![interpolation nodes](assets/figure_01.png)
+![interpolation nodes](assets/figure_02.png)
 
