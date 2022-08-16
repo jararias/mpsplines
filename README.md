@@ -34,7 +34,7 @@ where ```y``` is the unknown process that we want to reconstruct, but we only kn
 
 ![interpolation nods](assets/figure_01.png)
 
-*```saveplot``` is a function that formats and saves the plot. You can find the code in ```tests/intro_example.py```.
+*```saveplot``` is a function that formats and saves the plot. You can find the code in [tests/intro_example.py](https://github.com/jararias/mpsplines/blob/5507cb12bb125ad09395e96534beeb745623a687/tests/intro_example.py).
 
 If we make a regular splines interpolation, the interpolated curve will go through the interpolation nodes:
 
