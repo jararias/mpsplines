@@ -21,6 +21,8 @@ y = (0.05 - np.sin(x))**2
 # we only know some averages
 xi = np.reshape(x, (480, 60)).mean(axis=1)
 yi = np.reshape(y, (480, 60)).mean(axis=1)
+
+pl.figure(figsize=(
 ```
 
 where ```y``` is the unknown process that we want to reconstruct, but we only know the averages:
