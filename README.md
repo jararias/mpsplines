@@ -25,5 +25,5 @@ yi = np.reshape(y, (480, 60)).mean(axis=1)
 
 where ```y``` is the unknown process that we want to reconstruct, but we only know the averages:
 
-![Figure 1](https://github.com/jararias/mpsplines/assets/figure_01.png)
+![Figure 1](assets/figure_01.png)
 
