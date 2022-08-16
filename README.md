@@ -2,7 +2,7 @@
 
 This repository contains the data and code prepared while developing and writing the following research article:
 
-Ruiz-Arias, JA. "Mean-preserving interpolation with splines for averaged data series in solar radiation modeling" Submitted for publication in Solar Energy, August 2022
+Ruiz-Arias, JA. "Mean-preserving interpolation with splines for solar radiation modeling" Submitted for publication in Solar Energy, August 2022
 
 ### Usage:
 
