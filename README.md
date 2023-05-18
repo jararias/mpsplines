@@ -1,5 +1,11 @@
 ## mpsplines: Mean preserving interpolation with splines
 
+The mean-preserving method to interpolate using splines is published in:
+
+Ruiz-Arias, J. A. (2022). Mean-preserving interpolation with splines for solar radiation modeling. _Solar Energy_, Vol. 248, pp. 121-127. doi: 10.1016/j.solener.2022.10.038
+
+It is freely available [here](https://doi.org/10.1016/j.solener.2022.10.038).
+
 ### Installation:
 
 ```bash
@@ -56,7 +62,7 @@ from mpsplines import (
     MeanPreservingInterpolation as MPI
 )
 
-mpi = MPI(xi, yi)
+mpi = MPI(yi=yi, xi=xi)
 pl.plot(x, mpi(x), 'r-', lw=1, label='mp-splines')
 saveplot(3)
 ```
@@ -68,7 +74,7 @@ The unknown process is much better reconstructed with mp-splines, especially at 
 But we also know that this particular unknown process is periodic. We can let mp-splines know about it:
 
 ```python
-mpi = MPI(xi, yi, periodic=True)
+mpi = MPI(yi=yi, xi=xi, periodic=True)
 pl.plot(x, mpi(x), 'r-', lw=1, label='mp-splines periodic')
 saveplot(3)
 ```
@@ -80,7 +86,7 @@ Now the fit of the mp-splines interpolated results to the unknown process is ver
 Let assume that, for some reason, we also know that the interpolated values cannot be smaller than 0.05. Then:
 
 ```python
-mpi = MPI(xi, yi, periodic=True, min_val=0.05, cubic_window_size=3)
+mpi = MPI(yi=yi, xi=xi, periodic=True, min_val=0.05, cubic_window_size=3)
 pl.plot(x, mpi(x), 'r-', lw=1, label='mp-splines periodic, min_val=0.05')
 saveplot(3)
 ```

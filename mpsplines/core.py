@@ -19,11 +19,11 @@ python -m doctest mpsplines.py
 for a demo
 
 """
-from loguru import logger
 from datetime import datetime
 
 import numpy as np
 from scipy import optimize
+from loguru import logger
 
 try:
     from scipy.sparse import csc_matrix, csr_matrix, linalg
@@ -32,7 +32,7 @@ except ImportError:
     from scipy import linalg
     USE_SPARSE_MATRICES = False
 
-    
+
 logger.disable(__name__)
 
 
@@ -114,12 +114,16 @@ def second_order_unconstrained_interpolation(xi, yi, x_edges, periodic=False):
 
 
 def third_order_constrained_interpolation(
-        xi, yi, x_edges, min_val, p_guess, force_second_order=[]):
+        xi, yi, x_edges, min_val, p_guess, force_second_order=None):
     '''
     Compute the coefficients of the mean-preserving 3rd-order splines
     by minimizing the square error to find an interpolation curve which
     is always greater or equal than min_val
     '''
+
+    # pylint: disable=too-many-locals,too-many-statements
+
+    force_second_order = force_second_order or []
 
     order = 3
     n_coefs = order + 1
@@ -149,20 +153,18 @@ def third_order_constrained_interpolation(
 
     for e in third_order_splines:
         for k in range(-1, 1 + 1):
-            if (e + k) in force_second_order:
+            if e + k in force_second_order:
                 force_second_order.pop(force_second_order.index(e + k))
 
-    def _fit_func(p, x, force_second_order=[]):
+    def _fit_func(p, x, force_second_order=None):
         P = np.reshape(p, (n_samples, n_coefs))
-        P[force_second_order, 0] = 0.
+        P[force_second_order or [], 0] = 0.
         y = np.empty_like(x)
         ind = np.clip(np.digitize(x, x_edges)-1, 0, n_samples-1)
         for i in range(n_samples):
             universe = ind == i
             dx = x[universe] - xi[i]
-            y[universe] = (
-                P[i, 0]*(dx**3) + P[i, 1]*(dx**2) + P[i, 2]*dx + P[i, 3]
-            )
+            y[universe] = P[i, 0]*(dx**3) + P[i, 1]*(dx**2) + P[i, 2]*dx + P[i, 3]
         return y
 
     def _preserve_continuity(p):
@@ -248,25 +250,38 @@ def third_order_constrained_interpolation(
 
 class MeanPreservingInterpolation(object):
 
-    def __init__(self, xi, yi, min_val=None, periodic=False,
-                 x_edges=None, cubic_window_size=9):
+    def __init__(self, yi, xi=None, x_edges=None, min_val=None,
+                 periodic=False, cubic_window_size=9):
         """
         Mean-preserving interpolation of a 1-D function.
 
-        `xi` and `yi` are arrays of values from which the interpolation
-        splines function `y = f(x)` is created such that the average of
-        `f(x)` throughout an interval around `xi` is `yi`. The __call__
-        method in this class triggers the interpolation magic.
+        `xi` and `yi` are the values that are to be interpolated with
+        splines. `xi` indicates the location of the interpolation knots,
+        and `yi` is their actual values. The splines are chained
+        polynomials `y = f(x)` such that the average of `f(x)` throughout
+        custom intervals around `xi` are precisely the input values `yi`.
+        The custom intervals around `xi` are optionally defined in `x_edges`.
+        `xi` or `x_edges`, or both, must be provided.
 
-        WARNING: Calling `MeanPreservingInterpolation` with NaNs in input
-        values results in undefined behavior.
+        **WARNING**: Calling `MeanPreservingInterpolation` with NaNs in
+        input values results in undefined behavior.
 
         Parameters
         ----------
-        xi : (N,) array_like, or datetime_like
-            Location of the interpolation values
         yi : (N,) array_like
-            Interpolation Values
+            Interpolation values
+        xi : None or (N,) array_like, or datetime_like, optional
+            Location of the interpolation values. Default is None.
+            If `xi` is None, `x_edges` must be provided (see `x_edges` below).
+            If `xi` is provided, but `x_edges` is not, `x_edges` is reconstructed
+            assuming that `xi` is at the centers between consecutive `x_edges`
+            values.
+        x_edges : None or (N+1,) array_like, or datetime_like, optional
+            Define the intervals throughout which the mean of the splines must
+            match the interpolation values `yi`. Default is None.
+            If `x_edges` is None, `xi` must be provided (see `xi` above). If 
+            `x_edges` is provided, but `xi` is not, `xi` is reconstructed assuming
+            that they are at the centers between consecutive `x_edges` values
         min_val : None or float, optional
             Sets a minimum value that the interpolated values must respect. It
             is intended to constraint the interpolated values within physical
@@ -276,21 +291,11 @@ class MeanPreservingInterpolation(object):
         periodic : bool, optional
             If True, the interpolation assumes periodic conditions.
             Default is False.
-        x_edges : None or (N+1,) array_like, optional
-            Define the intervals throughout which the mean of the splines must
-            match the interpolation values `yi`.
-            Default is None, meaning that `x_edges` are assumed at the center
-            between consecutive `xi` values, and extrapolated at the leftmost
-            and rightmost splines.
         cubic_window_size : int, optional
             When a `min_val` violation is found, it specifies the number of
             splines that are relaxed around such violation.
             Default is 9, meaning that 4 splines are relaxed on both sides
             of the violating spline.
-
-        Methods
-        -------
-        __call__
 
         Examples
         --------
@@ -304,35 +309,62 @@ class MeanPreservingInterpolation(object):
         >>> xi = np.reshape(x, (10, 15)).mean(axis=1)
         >>> yi = np.reshape(y, (10, 15)).mean(axis=1)
         >>> # interpolation from samples (averages) into the original grid
-        >>> mpi = MPI(xi, yi)
-        >>> xnew = x
-        >>> ynew = mpi(xnew)
+        >>> mpi = MPI(yi=yi, xi=xi)
+        >>> ynew = mpi(x=x)
         >>> l, = pl.plot(x, y, 'k.', ms=8)
         >>> l, = pl.plot(xi, yi, 'c.', ms=16)
-        >>> l, = pl.plot(xnew, ynew, 'r.', ms=4)
+        >>> l, = pl.plot(x, ynew, 'r.', ms=4)
         >>> pl.show()
         """
 
-        self.xi = np.asarray(xi).reshape(-1)
         self.yi = np.asarray(yi).reshape(-1)
+        self.n_samples = len(self.yi)
 
-        if self.xi.size != self.yi.size:
-            raise AssertionError('`xi` and `yi` must have same size')
+        if xi is None and x_edges is None:
+            raise ValueError('missing argument: xi or x_edges, or both, must be provided')
 
-        if isinstance(self.xi[0], datetime):
-            self.xi = self.xi.astype('datetime64[ns]')
+        if xi is None:  # reconstruct xi assuming that it is exactly at the center of x_edges
 
-        if np.issubdtype(self.xi.dtype, np.datetime64):
-            dt64_ns = 'datetime64[ns]'
-            ns_per_day = 24 * 3600 * 1e9
-            trunc_day = self.xi.astype('datetime64[D]')
-            frac_day = self.xi.astype(dt64_ns) - trunc_day.astype(dt64_ns)
-            self.xi = trunc_day.astype(np.float64) + \
-                frac_day.astype(np.float64) / ns_per_day
+            self.x_edges = np.asarray(x_edges).reshape(-1)
+            if isinstance(self.x_edges[0], datetime):
+                self.x_edges = self.x_edges.astype('datetime64[ns]')
+            self.x_edges = self.x_edges.astype(np.float64)
 
-        self.xi = self.xi.astype(np.float64)
+            if self.x_edges.size != self.n_samples + 1:
+                raise ValueError('input argument mismatch: len(x_edges) must be len(yi) + 1')
 
-        self.n_samples = len(self.xi)
+            self.xi = self.x_edges[:-1] + 0.5*np.diff(self.x_edges)
+
+        elif x_edges is None:  # reconstruct x_edges assuming xi is at the center of x_edges
+
+            self.xi = np.asarray(xi).reshape(-1)
+            if isinstance(self.xi[0], datetime):
+                self.xi = self.xi.astype('datetime64[ns]')
+            self.xi = self.xi.astype(np.float64)
+
+            if self.xi.size != self.n_samples:
+                raise ValueError('input argument mismatch: len(xi) must be len(yi)')
+
+            self.x_edges = (self.xi[:-1] + self.xi[1:]) / 2.
+            lower_bound = self.xi[0] - (self.xi[1] - self.xi[0]) / 2.
+            upper_bound = self.xi[-1] + (self.xi[-1] - self.xi[-2]) / 2.
+            self.x_edges = np.r_[lower_bound, self.x_edges, upper_bound]
+
+        else:
+
+            self.xi = np.asarray(xi).reshape(-1)
+            if isinstance(self.xi[0], datetime):
+                self.xi = self.xi.astype('datetime64[ns]')
+            self.xi = self.xi.astype(np.float64)
+
+            self.x_edges = np.asarray(x_edges).reshape(-1)
+            if isinstance(self.x_edges[0], datetime):
+                self.x_edges = self.x_edges.astype('datetime64[ns]')
+            self.x_edges = self.x_edges.astype(np.float64)
+
+            if not self.xi.size == (self.x_edges.size - 1) == self.n_samples:
+                raise ValueError('input arguments mismatch: len(x_edges) must be len(xi) and len(yi)')
+
         self.min_val = min_val
 
         order = 3
@@ -342,15 +374,6 @@ class MeanPreservingInterpolation(object):
             raise AssertionError('cubic_window_size must be odd')
 
         cubic_window_half_size = int((cubic_window_size-1) / 2)
-
-        if x_edges is None:
-            self.x_edges = (self.xi[:-1] + self.xi[1:]) / 2.
-            lower_bound = self.xi[0] - (self.xi[1] - self.xi[0]) / 2.
-            upper_bound = self.xi[-1] + (self.xi[-1] - self.xi[-2]) / 2.
-            self.x_edges = np.r_[lower_bound, self.x_edges, upper_bound]
-        else:
-            self.x_edges = np.asarray(x_edges).reshape(-1)
-            assert len(self.x_edges) == (len(self.xi) + 1)
 
         # first, solve the problem using 2nd-order splines without
         # imposing a minimum value to the interpolated values. Thus,
@@ -389,11 +412,11 @@ class MeanPreservingInterpolation(object):
                 min_i = max(0, tos0 - half_width)
                 max_i = min(tos0 + half_width + 1, self.n_samples - 1)
                 while [tos for tos in third_order_splines
-                       if (max_i < tos < max_i + half_width)]:
+                       if max_i < tos < max_i + half_width]:
                     max_i = min(max_i + half_width + 1, self.n_samples - 1)
 
                 window_tos = [tos - min_i for tos in third_order_splines
-                              if (min_i < tos < max_i)]
+                              if min_i < tos < max_i]
 
                 # window splines that will remain as actual 2nd order
                 force_second_order = [k for k in range(max_i - min_i)
@@ -425,32 +448,22 @@ class MeanPreservingInterpolation(object):
 
     def __call__(self, x):
         """
-        Evaluate the interpolant
+        Evaluate the splines at `x`
 
         Parameters
         ----------
         x : array_like
-            1-D array of points to evaluate the interpolant at.
+            1-D array of `x` locations
 
         Returns
         -------
         y : array_like
-            Interpolated values.
+            Interpolated values
         """
 
         x_ = np.array(x, ndmin=1).reshape(-1)
-
         if isinstance(x_[0], datetime):
             x_ = x_.astype('datetime64[ns]')
-
-        if np.issubdtype(x_.dtype, np.datetime64):
-            ns = 'datetime64[ns]'
-            ns_per_day = 24 * 3600 * 1e9
-            trunc_day = x_.astype('datetime64[D]')
-            frac_day = x_.astype(ns) - trunc_day.astype(ns)
-            x_ = trunc_day.astype(np.float64) + \
-                frac_day.astype(np.float64) / ns_per_day
-
         x_ = x_.astype(np.float64)
 
         y = np.empty_like(x_)
@@ -464,6 +477,7 @@ class MeanPreservingInterpolation(object):
 
         if self.min_val is None:
             return y
+
         return np.maximum(self.min_val, y)
 
 
@@ -485,15 +499,7 @@ class MeanPreservingMonthlyLTAInterpolation(object):
 
     def __init__(self, yi, min_val=None, day_of_month=15, cubic_window_size=9):
         """
-        Mean-preserving interpolation of a 1-D function of long-term averages.
-
-        `xi` and `yi` are arrays of values used to approximate some function
-        `y = f(x)` such that the average of `f(x)` throughout an interval
-        around `xi` is `yi`. `xi` represents time and the interpolation assumes
-        periodic boundary conditions.
-
-        This class returns a function whose __call__ method uses interpolation
-        to find the values at new points.
+        Mean-preserving interpolation of a 1-D function for long-term monthly averages.
 
         Calling `MeanPreservingInterpolation` with NaNs in input values
         results in undefined behavior.
@@ -516,10 +522,6 @@ class MeanPreservingMonthlyLTAInterpolation(object):
             window. Default is 9, meaning that 4 splines to each side of the
             violating spline are relaxed.
 
-        Methods
-        -------
-        __call__
-
         Examples
         --------
         >>> from datetime import datetime, timedelta
@@ -530,7 +532,7 @@ class MeanPreservingMonthlyLTAInterpolation(object):
         >>> yi = np.array([0.3078, 0.3072, 0.3084, 0.3132, 0.3254, 0.3314,\
                            0.3298, 0.3204, 0.3106, 0.3118, 0.3119, 0.3082])
         >>> # interpolation from samples (averages) into the original grid
-        >>> mpi = MPI(yi)
+        >>> mpi = MPI(yi=yi)
         >>> xnew = [datetime(2017, 1, 1, 12) + timedelta(j) \
                     for j in range(365*3)]
         >>> ynew = mpi(xnew)
@@ -559,22 +561,13 @@ class MeanPreservingMonthlyLTAInterpolation(object):
         if np.any((xi < 0.) | (xi > 1)):
             raise AssertionError('xi out of bounds')
 
-        # def hms_to_days(hms):
-        #     seconds = hms.second + hms.microsecond / 1e6
-        #     return (hms.hour + (hms.minute + seconds / 60.) / 60.) / 24.
-
-        # ti = np.array(xi, ndmin=1, dtype='datetime64[us]').astype(datetime)
-        # doy = [t.toordinal() -datetime(t.year, 1, 1).toordinal() for t in ti]
-        # xi = [d + hms_to_days(t) for d, t in zip(doy, ti)]
-        # self.xi = np.array(xi, dtype=np.float64) / 365.
-
         self._mpi = MeanPreservingInterpolation(
-            xi, self.yi, min_val=min_val, periodic=True,
-            x_edges=None, cubic_window_size=cubic_window_size)
+            yi=self.yi, xi=xi, x_edges=None, min_val=min_val,
+            periodic=True, cubic_window_size=cubic_window_size)
 
     def __call__(self, x):
         """
-        Evaluate the interpolant
+        Evaluate the splines at `x`
 
         Parameters
         ----------
