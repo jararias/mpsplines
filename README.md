@@ -1,10 +1,8 @@
 ## mpsplines: Mean preserving interpolation with splines
 
-The mean-preserving method to interpolate using splines is published in:
+The mean-preserving method to interpolate using splines is published in (open access):
 
-Ruiz-Arias, J. A. (2022). Mean-preserving interpolation with splines for solar radiation modeling. _Solar Energy_, Vol. 248, pp. 121-127. doi: 10.1016/j.solener.2022.10.038
-
-It is freely available [here](https://doi.org/10.1016/j.solener.2022.10.038).
+Ruiz-Arias, J. A. (2022). Mean-preserving interpolation with splines for solar radiation modeling. _Solar Energy_, Vol. 248, pp. 121-127. doi: [10.1016/j.solener.2022.10.038](https://doi.org/10.1016/j.solener.2022.10.038)
 
 ### Installation:
 
