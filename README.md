@@ -23,8 +23,8 @@ x = np.linspace(0., 2*np.pi, 480)
 y = (0.05 - np.sin(x))**2
 
 # we only know some averages
-xi = np.reshape(x, (480, 60)).mean(axis=1)
-yi = np.reshape(y, (480, 60)).mean(axis=1)
+xi = np.reshape(x, (8, 60)).mean(axis=1)
+yi = np.reshape(y, (8, 60)).mean(axis=1)
 
 pl.figure(figsize=(8, 3.5))
 

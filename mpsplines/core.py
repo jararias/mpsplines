@@ -240,7 +240,7 @@ def third_order_constrained_interpolation(
 
     res = optimize.minimize(
         lambda p, x, fso, y: np.sum((_fit_func(p, x, fso) - y)**2),
-        p_guess, (xi, force_second_order, yi), method='SLSQP',
+        p_guess.reshape(-1), (xi, force_second_order, yi), method='SLSQP',
         constraints=constraints,
         options={'disp': False, 'ftol': 1e-6, 'maxiter': 100}
     )

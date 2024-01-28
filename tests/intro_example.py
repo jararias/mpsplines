@@ -70,11 +70,11 @@ pl.plot(x, mpi(x), 'r-', lw=1, label='mp-splines')
 saveplot(3)
 
 mpi = MPI(yi=yi, xi=xi, periodic=True)
-pl.gca().lines.pop(-1)
+pl.gca().lines[-1].remove()
 pl.plot(x, mpi(x), 'r-', lw=1, label='mp-splines periodic')
 saveplot(4)
 
 mpi = MPI(yi=yi, xi=xi, periodic=True, min_val=0.05, cubic_window_size=3)
-pl.gca().lines.pop(-1)
+pl.gca().lines[-1].remove()
 pl.plot(x, mpi(x), 'r-', lw=1, label='mp-splines periodic, min_val=0.05')
 saveplot(5)
