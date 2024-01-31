@@ -1,4 +1,4 @@
-## mpsplines: Mean preserving interpolation with splines
+# mpsplines: Mean preserving interpolation with splines
 
 The mean-preserving interpolation with splines is published in:
 
